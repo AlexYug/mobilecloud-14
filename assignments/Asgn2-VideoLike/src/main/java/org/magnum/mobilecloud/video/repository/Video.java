@@ -1,5 +1,10 @@
 package org.magnum.mobilecloud.video.repository;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -31,8 +36,11 @@ public class Video {
 	private String url;
 	private long duration;
 	private long likes;
+	@ElementCollection
+	private Set<String> likeusers;
 	
 	public Video() {
+		this.likeusers = new HashSet<String>();
 	}
 
 	public Video(String name, String url, long duration, long likes) {
@@ -41,8 +49,18 @@ public class Video {
 		this.url = url;
 		this.duration = duration;
 		this.likes = likes;
+		this.likeusers = new HashSet<String>();
 	}
-
+    public Set<String> getLikeusers()
+    {
+    	return likeusers;
+    }
+	
+    public void getLikeusers(Set<String> likeusers)
+    {
+    	this.likeusers = likeusers;
+    }
+	
 	public String getName() {
 		return name;
 	}
@@ -83,6 +101,24 @@ public class Video {
 		this.likes = likes;
 	}
 	
+	public boolean likeByUser(String user) {
+		if(likeusers.contains(user))
+		{
+			return false;
+		}
+		likeusers.add(user);
+		++this.likes;
+		return true;
+	}
+	public boolean unlikeByUser(String user) {
+		if(likeusers.contains(user))
+		{
+			likeusers.remove(user);
+			--this.likes;			
+			return true;
+		}
+		return false;
+	}
 	/**
 	 * Two Videos will generate the same hashcode if they have exactly the same
 	 * values for their name, url, and duration.
@@ -111,5 +147,4 @@ public class Video {
 			return false;
 		}
 	}
-
 }

@@ -19,6 +19,7 @@
 package org.magnum.mobilecloud.video;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
@@ -74,8 +76,9 @@ public class VideoController {
 //	}
 	
 	@RequestMapping(value="/video/{id}/like", method=RequestMethod.POST)
-	@ResponseBody Video likeVideo(
+	void likeVideo(
 			@PathVariable("id") long id,
+			Principal p,
 			HttpServletResponse rawResponse) throws IOException
 	{
 		Video video = null;
@@ -86,20 +89,56 @@ public class VideoController {
 		catch(java.lang.Exception e)
 		{
 			rawResponse.sendError(404);
-			return null;
+			return;
 		}
 		if(video == null)
 		{
 			rawResponse.sendError(404);
-			return null;
+			return;
 		}
-		return video;
+		if(video.likeByUser(p.getName())){
+			rawResponse.sendError(200);
+			mVideos.save(video);
+		}
+		else{
+			rawResponse.sendError(400);
+		}
+	}
+
+	@RequestMapping(value="/video/{id}/unlike", method=RequestMethod.POST)
+	void unlikeVideo(
+			@PathVariable("id") long id,
+			Principal p,
+			HttpServletResponse rawResponse) throws IOException
+	{
+		Video video = null;
+		try
+		{
+			video = findVideo(id);
+		}
+		catch(java.lang.Exception e)
+		{
+			rawResponse.sendError(404);
+			return;
+		}
+		if(video == null)
+		{
+			rawResponse.sendError(404);
+			return;
+		}
+		if(video.unlikeByUser(p.getName())){
+			rawResponse.sendError(200);
+			mVideos.save(video);
+		}
+		else{
+			rawResponse.sendError(400);
+		}
 	}
 	
 	@RequestMapping(value="/video", method=RequestMethod.POST)
-	void addVideo(@RequestBody Video video)
+	@ResponseBody Video addVideo(@RequestBody Video video)
 	{
-		mVideos.save(video);
+		return mVideos.save(video);
 	}
 	@RequestMapping(value="/video", method=RequestMethod.GET)
 	@ResponseBody Collection<Video> getAllVideos()
@@ -109,6 +148,48 @@ public class VideoController {
 		{
 			result.add(video);
 		}
+		return result;
+	}
+	
+	@RequestMapping(value="video/search/findByName", method=RequestMethod.GET)
+	@ResponseBody Collection<Video> GetVideosByName(
+			@RequestParam("title") String title)
+	{
+		Collection<Video> result = mVideos.findByName(title);
+		return result;
+	}
+	@RequestMapping(value="/video/{id}", method=RequestMethod.GET)
+	@ResponseBody Video getVideo(
+			@PathVariable("id") long id,
+			HttpServletResponse rawResponse) throws IOException
+	{
+		Video video = findVideo(id);
+		if(video == null)
+		{
+			rawResponse.sendError(404);	
+		}
+		return video;
+	}
+			
+	@RequestMapping(value="/video/{id}/likedby", method=RequestMethod.GET)
+	@ResponseBody Collection<String> likeVideo(
+			@PathVariable("id") long id,
+			HttpServletResponse rawResponse) throws IOException
+	{
+		Video video = findVideo(id);
+		if(video == null)
+		{
+			rawResponse.sendError(404);
+			return null;
+		}
+		return video.getLikeusers();
+	}
+	
+	@RequestMapping(value="/video/search/findByDurationLessThan", method=RequestMethod.GET)
+	@ResponseBody Collection<Video> GetVideosLessThan(
+			@RequestParam("duration") long duration)
+	{
+		Collection<Video> result = mVideos.findByDurationLessThan(duration);
 		return result;
 	}
 	
